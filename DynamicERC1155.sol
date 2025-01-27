@@ -39,7 +39,7 @@ abstract contract DynamicERC1155 is  ERC1155 {
     function _createNewAsset(string memory _name, string memory _symbol, uint256 tokenId) public virtual {
         
         require(!exists[tokenId], "Invalid token ID");
-
+        exists[tokenId] = true;
         name[tokenId] = _name;
         symbol[tokenId] = _symbol;
        
