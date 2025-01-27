@@ -4,49 +4,75 @@ pragma solidity ^0.8.22;
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
-
+/// @title DynamicERC1155
+/// @dev An abstract ERC1155 contract with dynamic asset creation and swapping capabilities.
 /// @custom:security-contact 0x1codegod@gmail.com
-abstract contract DynamicERC1155 is  ERC1155 {
+abstract contract DynamicERC1155 is ERC1155 {
+    // Mapping to track the existence of token IDs
+    mapping(uint256 => bool) public exists;
 
-    mapping ( uint256 => bool ) exists;
-    mapping ( uint256 => string ) name;
-    mapping ( uint256 => string ) public symbol;
-    
-    //@notice: dynamic _uri should end with a forward-slash 
+    // Mapping to store the names of token IDs
+    mapping(uint256 => string) public name;
+
+    // Mapping to store the symbols of token IDs
+    mapping(uint256 => string) public symbol;
+
+    // Base URI for the metadata, must end with a forward-slash
     string private _uri;
 
+    /// @dev Event emitted when a new asset is created
+    /// @param name Name of the new token
+    /// @param symbol Symbol of the new token
+    /// @param tokenId The ID of the new token
     event AssetCreated(
-        string indexed name, 
+        string indexed name,
         string indexed symbol,
         uint256 tokenId
     );
 
-    event AssetsSwapped( 
-        address indexed user, 
-        uint256 indexed fromTokenId, 
+    /// @dev Event emitted when assets are swapped
+    /// @param user The address of the user performing the swap
+    /// @param fromTokenId The token ID being burned
+    /// @param toTokenId The token ID being minted
+    /// @param amountToBurn Amount of the `fromTokenId` token burned
+    /// @param amountToMint Amount of the `toTokenId` token minted
+    event AssetsSwapped(
+        address indexed user,
+        uint256 indexed fromTokenId,
         uint256 indexed toTokenId,
-        uint256 amountToBurn, 
+        uint256 amountToBurn,
         uint256 amountToMint
     );
 
-    constructor( string memory uri_)
-        ERC1155( uri_)
-    {
+    /// @dev Constructor to set the base URI for metadata
+    /// @param uri_ The base URI, must end with a forward-slash
+    constructor(string memory uri_) ERC1155(uri_) {
         _uri = uri_;
     }
-    
-    // Function to create a new asset dynamically
-    function _createNewAsset(string memory _name, string memory _symbol, uint256 tokenId) public virtual {
-        
+
+    /// @notice Creates a new token dynamically
+    /// @param _name Name of the new token
+    /// @param _symbol Symbol of the new token
+    /// @param tokenId The ID of the new token
+    function _createNewAsset(
+        string memory _name,
+        string memory _symbol,
+        uint256 tokenId
+    ) public virtual {
         require(!exists[tokenId], "Invalid token ID");
         exists[tokenId] = true;
         name[tokenId] = _name;
         symbol[tokenId] = _symbol;
-       
-        emit AssetCreated(_name, _symbol, tokenId );
+
+        emit AssetCreated(_name, _symbol, tokenId);
     }
 
-     // Function to swap one asset for another
+    /// @notice Swaps one token for another
+    /// @param fromTokenId The token ID to burn
+    /// @param toTokenId The token ID to mint
+    /// @param amountToBurn Amount of `fromTokenId` to burn
+    /// @param amountToMint Amount of `toTokenId` to mint
+    /// @param data Additional data passed during the minting process
     function _exchange(
         uint256 fromTokenId,
         uint256 toTokenId,
@@ -62,18 +88,34 @@ abstract contract DynamicERC1155 is  ERC1155 {
         burn(msg.sender, fromTokenId, amountToBurn);
         mint(msg.sender, toTokenId, amountToMint, data);
 
-        emit AssetsSwapped(msg.sender, fromTokenId, toTokenId, amountToBurn, amountToMint);
+        emit AssetsSwapped(
+            msg.sender,
+            fromTokenId,
+            toTokenId,
+            amountToBurn,
+            amountToMint
+        );
     }
-    
+
+    /// @notice Mints new tokens
+    /// @param account Address receiving the tokens
+    /// @param id Token ID to mint
+    /// @param amount Number of tokens to mint
+    /// @param data Additional data for the minting process
     function mint(
         address account,
         uint256 id,
         uint256 amount,
         bytes memory data
-    ) public virtual  {
+    ) public virtual {
         _mint(account, id, amount, data);
     }
 
+    /// @notice Mints multiple token types in a batch
+    /// @param to Address receiving the tokens
+    /// @param ids Array of token IDs to mint
+    /// @param amounts Array of amounts to mint for each token ID
+    /// @param data Additional data for the minting process
     function mintBatch(
         address to,
         uint256[] memory ids,
@@ -83,24 +125,37 @@ abstract contract DynamicERC1155 is  ERC1155 {
         _mintBatch(to, ids, amounts, data);
     }
 
-    function burn(address account, uint256 id, uint256 value) public virtual  {
-       _burn( account, id, value);
+    /// @notice Burns tokens from an account
+    /// @param account Address whose tokens will be burned
+    /// @param id Token ID to burn
+    /// @param value Amount of tokens to burn
+    function burn(address account, uint256 id, uint256 value) public virtual {
+        _burn(account, id, value);
     }
 
-    
-    function burnBatch(address from, uint256[] memory ids, uint256[] memory values) public virtual  {
-       _burnBatch(from, ids, values);
+    /// @notice Burns multiple token types in a batch
+    /// @param from Address whose tokens will be burned
+    /// @param ids Array of token IDs to burn
+    /// @param values Array of amounts to burn for each token ID
+    function burnBatch(
+        address from,
+        uint256[] memory ids,
+        uint256[] memory values
+    ) public virtual {
+        _burnBatch(from, ids, values);
     }
 
+    /// @notice Retrieves the URI for a specific token ID
+    /// @param tokenId Token ID for which the URI is requested
+    /// @return The full URI of the token's metadata
     function uri(uint256 tokenId) public view override returns (string memory) {
-        return (
+        return
             string(
                 abi.encodePacked(
                     _uri,
                     Strings.toString(tokenId),
                     ".json"
                 )
-            )
-        );
+            );
     }
 }
