@@ -17,24 +17,12 @@ abstract contract DynamicERC1155 is ERC1155 {
     //Default symbol compatible with existing wallets
     string public symbol;
 
-    // Mapping to store the names of token IDs
-    mapping(uint256 => string) public _name;
-
-    // Mapping to store the symbols of token IDs
-    mapping(uint256 => string) public _symbol;
-
     // Base URI for the metadata, must end with a forward-slash
     string private _uri;
 
     /// @dev Event emitted when a new asset is created
-    /// @param name Name of the new token
-    /// @param symbol Symbol of the new token
     /// @param tokenId The ID of the new token
-    event AssetCreated(
-        string indexed name,
-        string indexed symbol,
-        uint256 tokenId
-    );
+    event AssetCreated(uint256 tokenId);
 
     /// @dev Event emitted when assets are swapped
     /// @param user The address of the user performing the swap
@@ -59,20 +47,13 @@ abstract contract DynamicERC1155 is ERC1155 {
     }
 
     /// @notice Creates a new token dynamically
-    /// @param name_ Name of the new token
-    /// @param symbol_ Symbol of the new token
     /// @param tokenId The ID of the new token
     function _createNewAsset(
-        string memory name_,
-        string memory symbol_,
         uint256 tokenId
     ) public virtual {
         require(!exists[tokenId], "Invalid token ID");
         exists[tokenId] = true;
-        _name[tokenId] = name_;
-        _symbol[tokenId] = symbol_;
-
-        emit AssetCreated(name_, symbol_, tokenId);
+        emit AssetCreated(tokenId);
     }
 
     /// @notice Swaps one token for another
