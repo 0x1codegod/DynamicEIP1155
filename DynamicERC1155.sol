@@ -11,11 +11,17 @@ abstract contract DynamicERC1155 is ERC1155 {
     // Mapping to track the existence of token IDs
     mapping(uint256 => bool) public exists;
 
+    //Default name compatible with existing wallets
+    string public name;
+
+    //Default symbol compatible with existing wallets
+    string public symbol;
+
     // Mapping to store the names of token IDs
-    mapping(uint256 => string) public name;
+    mapping(uint256 => string) public _name;
 
     // Mapping to store the symbols of token IDs
-    mapping(uint256 => string) public symbol;
+    mapping(uint256 => string) public _symbol;
 
     // Base URI for the metadata, must end with a forward-slash
     string private _uri;
@@ -46,25 +52,27 @@ abstract contract DynamicERC1155 is ERC1155 {
 
     /// @dev Constructor to set the base URI for metadata
     /// @param uri_ The base URI, must end with a forward-slash
-    constructor(string memory uri_) ERC1155(uri_) {
+    constructor(string memory uri_, string memory name_, string memory symbol_) ERC1155(uri_) {
         _uri = uri_;
+        name = name_;
+        symbol = symbol_;
     }
 
     /// @notice Creates a new token dynamically
-    /// @param _name Name of the new token
-    /// @param _symbol Symbol of the new token
+    /// @param name_ Name of the new token
+    /// @param symbol_ Symbol of the new token
     /// @param tokenId The ID of the new token
     function _createNewAsset(
-        string memory _name,
-        string memory _symbol,
+        string memory name_,
+        string memory symbol_,
         uint256 tokenId
     ) public virtual {
         require(!exists[tokenId], "Invalid token ID");
         exists[tokenId] = true;
-        name[tokenId] = _name;
-        symbol[tokenId] = _symbol;
+        _name[tokenId] = name_;
+        _symbol[tokenId] = symbol_;
 
-        emit AssetCreated(_name, _symbol, tokenId);
+        emit AssetCreated(name_, symbol_, tokenId);
     }
 
     /// @notice Swaps one token for another
